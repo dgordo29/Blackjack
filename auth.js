@@ -60,7 +60,29 @@ const SUPABASE_KEY = 'sb_publishable_IvRB5Nb_SHE9NPpNqPsw0Q_OvA9jP3E';
     const img = el('user-avatar');
     if (avatar) { img.src = avatar; img.classList.remove('hidden'); }
     else { img.removeAttribute('src'); img.classList.add('hidden'); }
+    renderGreeting(avatar);
   }
+
+  // ---------- Greeting ----------
+  let greetingDismissed = false;
+  function renderGreeting(avatar) {
+    const box = el('greeting');
+    if (!user || greetingDismissed) { box.classList.add('hidden'); return; }
+    const name = displayName();
+    // First name only, unless the "name" is an email address
+    const first = name.includes('@') ? name : name.split(' ')[0];
+    const hour = new Date().getHours();
+    const part = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    el('greeting-title').textContent = `${part}, ${first}!`;
+    const img = el('greeting-avatar');
+    if (avatar) { img.src = avatar; img.classList.remove('hidden'); }
+    else { img.removeAttribute('src'); img.classList.add('hidden'); }
+    box.classList.remove('hidden');
+  }
+  el('greeting-close').addEventListener('click', () => {
+    greetingDismissed = true;
+    el('greeting').classList.add('hidden');
+  });
 
   async function loadProfile() {
     const { data, error } = await db
@@ -84,6 +106,7 @@ const SUPABASE_KEY = 'sb_publishable_IvRB5Nb_SHE9NPpNqPsw0Q_OvA9jP3E';
     user = session?.user || null;
     if (!user) {
       profile = null;
+      greetingDismissed = false;
       showAuth(recovering ? 'reset' : 'main');
       return;
     }
