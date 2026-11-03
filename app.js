@@ -29,6 +29,7 @@ function loadBank() {
 }
 function saveBank() {
   try { localStorage.setItem(STORAGE_KEY, String(state.bank)); } catch { /* ignore */ }
+  if (typeof window.onBankSaved === 'function') window.onBankSaved(state.bank);
 }
 
 // ---------- API ----------
@@ -327,6 +328,17 @@ $('reset').addEventListener('click', () => {
   setMessage('Bank reset. Place your bet.');
   render();
 });
+
+// Lets auth.js load a signed-in player's saved bank
+window.blackjack = {
+  setBank(amount) {
+    if (state.inRound || !Number.isFinite(amount)) return;
+    state.bank = amount;
+    state.pendingBet = 0;
+    try { localStorage.setItem(STORAGE_KEY, String(amount)); } catch { /* ignore */ }
+    render();
+  },
+};
 
 // ---------- Start ----------
 withBusy(async () => {
