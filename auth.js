@@ -109,6 +109,7 @@ const SUPABASE_KEY = 'sb_publishable_IvRB5Nb_SHE9NPpNqPsw0Q_OvA9jP3E';
     user = session?.user || null;
     if (!user) {
       profile = null;
+      if (window.StatsPage) window.StatsPage.reset();
       greetingDismissed = false;
       showAuth(recovering ? 'reset' : 'main');
       return;
@@ -224,7 +225,9 @@ const SUPABASE_KEY = 'sb_publishable_IvRB5Nb_SHE9NPpNqPsw0Q_OvA9jP3E';
     document.querySelectorAll('.view-tab').forEach((t) => t.classList.toggle('active', t.dataset.view === name));
     el('table-view').classList.toggle('hidden', name !== 'table');
     el('profile-view').classList.toggle('hidden', name !== 'profile');
+    el('stats-view').classList.toggle('hidden', name !== 'stats');
     if (name === 'profile') fillProfileForm();
+    if (name === 'stats' && window.StatsPage) window.StatsPage.open();
   }
   document.querySelectorAll('.view-tab').forEach((t) => {
     t.addEventListener('click', () => showTab(t.dataset.view));
@@ -296,24 +299,29 @@ const SUPABASE_KEY = 'sb_publishable_IvRB5Nb_SHE9NPpNqPsw0Q_OvA9jP3E';
     msg.textContent = wasNew ? 'Profile created! Head to the Table to play.' : 'Saved.';
   });
 
-  // ---------- Stats ----------
-  window.onRoundFinished = async (r) => {
+  // ---------- Save every round ----------
+  window.onRoundFinished = async ({ round, hands }) => {
     if (!user) return;
-    clearTimeout(bankTimer); // record_round saves the bank too
-    const { error } = await db.rpc('record_round', {
-      p_won: r.won, p_lost: r.lost, p_pushed: r.pushed,
-      p_blackjacks: r.blackjacks, p_net: r.net, p_bank: r.bank,
-    });
-    if (error) { console.error('Could not save stats', error); return; }
+    clearTimeout(bankTimer); // save_round stores the bank too
+    const { error } = await db.rpc('save_round', { p_round: round, p_hands: hands });
+    if (error) { console.error('Could not save round', error); return; }
+    if (window.StatsPage) window.StatsPage.markStale();
     if (profile) {
-      profile.hands_played = (profile.hands_played || 0) + r.won + r.lost + r.pushed;
-      profile.hands_won = (profile.hands_won || 0) + r.won;
-      profile.hands_lost = (profile.hands_lost || 0) + r.lost;
-      profile.hands_pushed = (profile.hands_pushed || 0) + r.pushed;
-      profile.blackjacks = (profile.blackjacks || 0) + r.blackjacks;
-      profile.biggest_win = Math.max(profile.biggest_win || 0, r.net);
-      profile.bank = r.bank;
+      const count = (keys) => hands.filter((h) => keys.includes(h.result)).length;
+      const won = count(['win', 'blackjack']);
+      const lost = count(['lose', 'bust', 'dealer_blackjack']);
+      const pushed = count(['push']);
+      profile.hands_played = (profile.hands_played || 0) + won + lost + pushed;
+      profile.hands_won = (profile.hands_won || 0) + won;
+      profile.hands_lost = (profile.hands_lost || 0) + lost;
+      profile.hands_pushed = (profile.hands_pushed || 0) + pushed;
+      profile.blackjacks = (profile.blackjacks || 0) + count(['blackjack']);
+      profile.biggest_win = Math.max(profile.biggest_win || 0, round.net);
+      profile.bank = round.bank_after;
       renderStats();
     }
   };
+
+  // Shared with stats.js
+  window.blackjackAuth = { db, getUser: () => user };
 })();

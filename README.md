@@ -11,6 +11,9 @@ A browser Blackjack game built with plain HTML, CSS, and JavaScript. Cards are s
 - Accounts with Supabase: email + password, Continue with Google, forgot password, log out
 - Profile tab: display name, unique username, hometown, bio; new players are asked to create a profile on first login
 - Stats saved per player: bank, hands played, wins/losses/pushes, blackjacks, biggest win
+- Every round and hand is saved (cards, each decision, what basic strategy recommended, Hi-Lo count, strategy label)
+- Stats tab: KPIs, automatic insights, strategy comparison, charts, most common mistakes, recent hands, CSV/JSON export
+- Table options: label the strategy you're testing, show basic strategy hints, show the running/true count
 
 ## How it uses the API
 
@@ -24,7 +27,15 @@ Card images come from the API response; the face-down card uses `https://deckofc
 
 ## Accounts (Supabase)
 
-`auth.js` connects to the Supabase project `my-app` using its **publishable** key, which is safe in the browser. Data lives in a `profiles` table (one row per user, created automatically on sign-up by a database trigger). Finished rounds are recorded with the `record_round` database function, which updates the player's stats in one step. Row level security lets each user read and update only their own row.
+`auth.js` connects to the Supabase project `my-app` using its **publishable** key, which is safe in the browser. Data lives in a `profiles` table (one row per user, created automatically on sign-up by a database trigger). Finished rounds are saved with the `save_round` database function, which writes the round, its hands, and the profile totals in one step.
+
+| Table | One row per | Key columns |
+| --- | --- | --- |
+| `profiles` | player | username, hometown, bio, bank, lifetime totals |
+| `rounds` | round dealt | strategy, dealer cards/total, bet, net, bank before/after, running and true count |
+| `hands` | player hand (2 for a split) | start and final cards/totals, actions, decisions (JSON), mistakes, result, net |
+
+Basic strategy (`strategy.js`) matches these rules: 6 decks, dealer stands on all 17s, double after split, no surrender. Row level security lets each user read and update only their own row.
 
 Dashboard settings to set in Supabase (Authentication):
 

@@ -60,6 +60,7 @@
     </header>
     <nav class="view-tabs" role="tablist" aria-label="Sections">
       <button type="button" class="view-tab active" data-view="table" role="tab">Table</button>
+      <button type="button" class="view-tab" data-view="stats" role="tab">Stats</button>
       <button type="button" class="view-tab" data-view="profile" role="tab">Profile</button>
     </nav>
     <div id="greeting" class="greeting hidden" role="status">
@@ -104,11 +105,92 @@
         <button id="double" class="secondary">Double</button>
         <button id="split" class="secondary">Split</button>
       </div>
+      <p id="hint" class="hint-line hidden" role="status"></p>
+      <div class="trainer">
+        <label class="strategy-pick">Strategy I'm testing
+          <input id="strategy" list="strategy-options" maxlength="40" autocomplete="off">
+          <datalist id="strategy-options">
+            <option value="Basic strategy"></option>
+            <option value="Hi-Lo counting"></option>
+            <option value="Gut feel"></option>
+            <option value="Never bust"></option>
+            <option value="Mimic the dealer"></option>
+            <option value="Martingale"></option>
+          </datalist>
+        </label>
+        <label class="check"><input id="show-hints" type="checkbox"> Show basic strategy hints</label>
+        <label class="check"><input id="show-count" type="checkbox"> Show card count</label>
+      </div>
+      <p id="count" class="count-line hidden"></p>
       <div class="row small">
         <button id="reset" class="link">Reset bank to $1,000</button>
       </div>
     </section>
     </div>
+
+    <!-- Stats tab -->
+    <section id="stats-view" class="view hidden" aria-labelledby="stats-heading">
+      <div class="stats-top">
+        <h2 id="stats-heading">Your metrics</h2>
+        <div class="filters">
+          <label>Strategy <select id="f-strategy"><option value="">All strategies</option></select></label>
+          <label>Time <select id="f-time">
+            <option value="all">All time</option>
+            <option value="30">Last 30 days</option>
+            <option value="7">Last 7 days</option>
+            <option value="1">Last 24 hours</option>
+          </select></label>
+          <button id="export-csv" type="button" class="secondary small-btn">Export CSV</button>
+          <button id="export-json" type="button" class="secondary small-btn">Export JSON</button>
+        </div>
+      </div>
+      <p id="stats-status" class="muted" role="status">Loading your history…</p>
+
+      <div id="stats-body" class="hidden">
+        <div id="kpis" class="kpis"></div>
+
+        <div class="panel">
+          <h3>Insights</h3>
+          <ul id="insights" class="insights"></ul>
+        </div>
+
+        <div class="panel">
+          <h3>Strategies compared</h3>
+          <div class="table-wrap"><table class="data" id="strategy-table"></table></div>
+        </div>
+
+        <div class="chart-grid">
+          <figure class="panel chart" id="chart-bank">
+            <figcaption><h3>Bankroll by round</h3><p class="muted small-text">Bank after each round</p></figcaption>
+            <div class="chart-box"></div>
+          </figure>
+          <figure class="panel chart" id="chart-upcard">
+            <figcaption><h3>Win rate by dealer up card</h3><p class="muted small-text">Share of your hands won (pushes count as not won)</p></figcaption>
+            <div class="chart-box"></div>
+          </figure>
+          <figure class="panel chart" id="chart-count">
+            <figcaption><h3>Average result by true count</h3><p class="muted small-text">Average net per round, grouped by the Hi-Lo true count at the deal</p></figcaption>
+            <div class="chart-box"></div>
+          </figure>
+          <figure class="panel chart" id="chart-start">
+            <figcaption><h3>Win rate by starting hand</h3><p class="muted small-text">Your first two cards</p></figcaption>
+            <div class="chart-box"></div>
+          </figure>
+        </div>
+
+        <div class="panel">
+          <h3>Most common mistakes</h3>
+          <p class="muted small-text">Decisions where you didn't follow basic strategy</p>
+          <div class="table-wrap"><table class="data" id="mistake-table"></table></div>
+        </div>
+
+        <div class="panel">
+          <h3>Recent hands</h3>
+          <div class="table-wrap"><table class="data" id="recent-table"></table></div>
+        </div>
+      </div>
+      <div id="chart-tip" class="chart-tip hidden" role="tooltip"></div>
+    </section>
 
     <!-- Profile tab -->
     <section id="profile-view" class="view hidden" aria-labelledby="profile-heading">
@@ -159,7 +241,9 @@
 
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+  <script src="strategy.js"></script>
   <script src="app.js"></script>
   <script src="auth.js"></script>
+  <script src="stats.js"></script>
 </body>
 </html>
