@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blackjack</title>
+  <meta name="description" content="Play Blackjack using the Deck of Cards API.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="table">
+    <header class="top">
+      <h1>Blackjack</h1>
+      <div class="stats">
+        <span>Bank: <strong id="bank">$0</strong></span>
+        <span>Bet: <strong id="bet">$0</strong></span>
+        <span class="muted">Cards left: <span id="remaining">–</span></span>
+      </div>
+    </header>
+
+    <section class="area">
+      <h2>Dealer <span class="score" id="dealer-score"></span></h2>
+      <div class="hand" id="dealer-hand"></div>
+    </section>
+
+    <p class="message" id="message" role="status" aria-live="polite">Loading deck…</p>
+
+    <section class="area">
+      <h2>You</h2>
+      <div id="player-hands" class="player-hands"></div>
+    </section>
+
+    <section class="controls">
+      <div id="betting" class="row">
+        <button class="chip" data-chip="5">$5</button>
+        <button class="chip" data-chip="25">$25</button>
+        <button class="chip" data-chip="100">$100</button>
+        <button class="chip" data-chip="500">$500</button>
+        <button id="clear-bet" class="secondary">Clear</button>
+        <button id="deal" class="primary">Deal</button>
+      </div>
+      <div id="actions" class="row hidden">
+        <button id="hit" class="primary">Hit</button>
+        <button id="stand" class="primary">Stand</button>
+        <button id="double" class="secondary">Double</button>
+        <button id="split" class="secondary">Split</button>
+      </div>
+      <div class="row small">
+        <button id="reset" class="link">Reset bank to $1,000</button>
+      </div>
+    </section>
+
+    <footer class="foot">
+      Dealer stands on all 17s · Blackjack pays 3:2 · 6-deck shoe ·
+      Cards by <a href="https://deckofcardsapi.com/" target="_blank" rel="noopener">Deck of Cards API</a>
+    </footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
