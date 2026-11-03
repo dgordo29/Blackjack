@@ -298,6 +298,19 @@ async function finishRound() {
   }
   saveBank();
 
+  // Report the round so auth.js can save the player's stats
+  if (typeof window.onRoundFinished === 'function') {
+    const count = (fn) => state.hands.filter(fn).length;
+    window.onRoundFinished({
+      won: count((h) => h.result === 'Win' || h.result === 'Blackjack!'),
+      lost: count((h) => ['Lose', 'Bust', 'Dealer blackjack'].includes(h.result)),
+      pushed: count((h) => h.result === 'Push'),
+      blackjacks: count((h) => h.result === 'Blackjack!'),
+      net,
+      bank: state.bank,
+    });
+  }
+
   const summary = net > 0 ? `You won $${net}!` : net < 0 ? `You lost $${-net}.` : (state.hands.length > 1 ? 'You broke even.' : 'Push — bet returned.');
   const dealerNote = dealerTotal > 21 ? 'Dealer busts. ' : '';
   setMessage(`${dealerNote}${summary} Place a bet to play again.`);

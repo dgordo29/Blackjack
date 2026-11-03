@@ -9,7 +9,8 @@ A browser Blackjack game built with plain HTML, CSS, and JavaScript. Cards are s
 - Hit, stand, double down, and split (one split; split aces get one card each)
 - Dealer stands on all 17s; blackjack pays 3:2
 - Accounts with Supabase: email + password, Continue with Google, forgot password, log out
-- Profile page to set a display name; each player's bank is saved to their account
+- Profile tab: display name, unique username, hometown, bio; new players are asked to create a profile on first login
+- Stats saved per player: bank, hands played, wins/losses/pushes, blackjacks, biggest win
 
 ## How it uses the API
 
@@ -23,7 +24,7 @@ Card images come from the API response; the face-down card uses `https://deckofc
 
 ## Accounts (Supabase)
 
-`auth.js` connects to the Supabase project `my-app` using its **publishable** key, which is safe in the browser. Data lives in a `profiles` table (one row per user, created automatically on sign-up by a database trigger). Row level security lets each user read and update only their own row.
+`auth.js` connects to the Supabase project `my-app` using its **publishable** key, which is safe in the browser. Data lives in a `profiles` table (one row per user, created automatically on sign-up by a database trigger). Finished rounds are recorded with the `record_round` database function, which updates the player's stats in one step. Row level security lets each user read and update only their own row.
 
 Dashboard settings to set in Supabase (Authentication):
 

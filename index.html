@@ -55,10 +55,13 @@
       <div class="user">
         <img id="user-avatar" class="avatar hidden" alt="" referrerpolicy="no-referrer">
         <span id="user-name" class="user-name"></span>
-        <button id="profile-open" type="button" class="secondary small-btn">Profile</button>
         <button id="logout" type="button" class="secondary small-btn">Log out</button>
       </div>
     </header>
+    <nav class="view-tabs" role="tablist" aria-label="Sections">
+      <button type="button" class="view-tab active" data-view="table" role="tab">Table</button>
+      <button type="button" class="view-tab" data-view="profile" role="tab">Profile</button>
+    </nav>
     <div id="greeting" class="greeting hidden" role="status">
       <img id="greeting-avatar" class="greeting-avatar hidden" alt="" referrerpolicy="no-referrer">
       <div class="greeting-text">
@@ -67,6 +70,7 @@
       </div>
       <button id="greeting-close" type="button" class="link" aria-label="Dismiss greeting">✕</button>
     </div>
+    <div id="table-view" class="view">
     <div class="stats">
       <span>Bank: <strong id="bank">$0</strong></span>
       <span>Bet: <strong id="bet">$0</strong></span>
@@ -104,6 +108,48 @@
         <button id="reset" class="link">Reset bank to $1,000</button>
       </div>
     </section>
+    </div>
+
+    <!-- Profile tab -->
+    <section id="profile-view" class="view hidden" aria-labelledby="profile-heading">
+      <div class="profile-grid">
+        <form id="profile-form" class="panel form">
+          <div class="profile-head">
+            <img id="profile-avatar" class="profile-avatar hidden" alt="" referrerpolicy="no-referrer">
+            <div>
+              <h2 id="profile-heading">Your profile</h2>
+              <p class="muted small-text">Signed in as <strong id="profile-email"></strong></p>
+            </div>
+          </div>
+          <p id="profile-intro" class="intro hidden">Welcome! Create your profile so other players know who you are.</p>
+          <label>Display name <input id="profile-name" type="text" maxlength="60" autocomplete="nickname" placeholder="How your name appears"></label>
+          <label>Username
+            <input id="profile-username" type="text" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" required placeholder="e.g. split_the_eights">
+            <span class="hint">3–20 letters, numbers, or underscores. Must be unique.</span>
+          </label>
+          <label>Hometown <input id="profile-hometown" type="text" maxlength="60" placeholder="e.g. Boca Raton, FL"></label>
+          <label>Bio
+            <textarea id="profile-bio" maxlength="280" rows="3" placeholder="A line about you and your blackjack style"></textarea>
+            <span class="hint"><span id="bio-count">0</span>/280</span>
+          </label>
+          <button id="profile-save" type="submit" class="primary">Save profile</button>
+          <p id="profile-message" class="auth-message" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="panel">
+          <h2>Your stats</h2>
+          <dl class="stat-grid">
+            <div><dt>Bank</dt><dd id="stat-bank">–</dd></div>
+            <div><dt>Hands played</dt><dd id="stat-played">0</dd></div>
+            <div><dt>Win rate</dt><dd id="stat-rate">–</dd></div>
+            <div><dt>Won / Lost / Push</dt><dd id="stat-wlp">0 / 0 / 0</dd></div>
+            <div><dt>Blackjacks</dt><dd id="stat-bj">0</dd></div>
+            <div><dt>Biggest win</dt><dd id="stat-biggest">$0</dd></div>
+          </dl>
+          <p class="muted small-text">Member since <span id="stat-since">–</span></p>
+        </div>
+      </div>
+    </section>
 
     <footer class="foot">
       Dealer stands on all 17s · Blackjack pays 3:2 · 6-deck shoe ·
@@ -111,19 +157,6 @@
     </footer>
   </main>
 
-  <!-- Profile -->
-  <dialog id="profile-dialog" class="dialog">
-    <form id="profile-form" class="form" method="dialog">
-      <h2>Your profile</h2>
-      <p class="muted">Signed in as <strong id="profile-email"></strong></p>
-      <label>Display name <input id="profile-name" type="text" maxlength="60" autocomplete="nickname"></label>
-      <div class="row">
-        <button id="profile-save" type="submit" class="primary" value="save">Save</button>
-        <button id="profile-close" type="button" class="secondary">Close</button>
-      </div>
-      <p id="profile-message" class="auth-message" role="status" aria-live="polite"></p>
-    </form>
-  </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
   <script src="app.js"></script>

@@ -87,13 +87,16 @@ const SUPABASE_KEY = 'sb_publishable_IvRB5Nb_SHE9NPpNqPsw0Q_OvA9jP3E';
   async function loadProfile() {
     const { data, error } = await db
       .from('profiles')
-      .select('display_name, avatar_url, bank')
+      .select('display_name, avatar_url, bank, username, hometown, bio, hands_played, hands_won, hands_lost, hands_pushed, blackjacks, biggest_win, created_at')
       .eq('id', user.id)
       .maybeSingle();
     if (error) { console.error(error); return; }
     profile = data;
     renderUser();
+    renderStats();
     if (profile && window.blackjack) window.blackjack.setBank(profile.bank);
+    // First visit: ask the player to create their profile
+    if (profile && !profile.username) showTab('profile');
   }
 
   db.auth.onAuthStateChange((event, session) => {
@@ -111,6 +114,7 @@ const SUPABASE_KEY = 'sb_publishable_IvRB5Nb_SHE9NPpNqPsw0Q_OvA9jP3E';
       return;
     }
     if (recovering) return;
+    if (game.classList.contains('hidden')) showTab('table');
     showGame();
     renderUser();
     // Don't call Supabase inside this callback directly; defer it.
@@ -215,31 +219,101 @@ const SUPABASE_KEY = 'sb_publishable_IvRB5Nb_SHE9NPpNqPsw0Q_OvA9jP3E';
     say('You are logged out.');
   });
 
-  // ---------- Profile ----------
-  const dialog = el('profile-dialog');
-  el('profile-open').addEventListener('click', () => {
-    el('profile-email').textContent = user?.email || '';
-    el('profile-name').value = profile?.display_name || '';
-    el('profile-message').textContent = '';
-    dialog.showModal();
+  // ---------- Tabs ----------
+  function showTab(name) {
+    document.querySelectorAll('.view-tab').forEach((t) => t.classList.toggle('active', t.dataset.view === name));
+    el('table-view').classList.toggle('hidden', name !== 'table');
+    el('profile-view').classList.toggle('hidden', name !== 'profile');
+    if (name === 'profile') fillProfileForm();
+  }
+  document.querySelectorAll('.view-tab').forEach((t) => {
+    t.addEventListener('click', () => showTab(t.dataset.view));
   });
-  el('profile-close').addEventListener('click', () => dialog.close());
+
+  // ---------- Profile ----------
+  const money = (n) => '$' + Number(n || 0).toLocaleString();
+
+  function fillProfileForm() {
+    const meta = user?.user_metadata || {};
+    const isNew = !profile?.username;
+    el('profile-heading').textContent = isNew ? 'Create your profile' : 'Your profile';
+    el('profile-intro').classList.toggle('hidden', !isNew);
+    el('profile-save').textContent = isNew ? 'Create profile' : 'Save profile';
+    el('profile-email').textContent = user?.email || '';
+    el('profile-name').value = profile?.display_name || meta.full_name || meta.name || '';
+    el('profile-username').value = profile?.username || '';
+    el('profile-hometown').value = profile?.hometown || '';
+    el('profile-bio').value = profile?.bio || '';
+    el('bio-count').textContent = el('profile-bio').value.length;
+    el('profile-message').textContent = '';
+    const avatar = profile?.avatar_url || meta.avatar_url || meta.picture;
+    const img = el('profile-avatar');
+    if (avatar) { img.src = avatar; img.classList.remove('hidden'); }
+    else { img.removeAttribute('src'); img.classList.add('hidden'); }
+    renderStats();
+  }
+
+  function renderStats() {
+    const p = profile || {};
+    const played = p.hands_played || 0;
+    el('stat-bank').textContent = money(p.bank ?? 1000);
+    el('stat-played').textContent = played.toLocaleString();
+    el('stat-rate').textContent = played ? Math.round((p.hands_won / played) * 100) + '%' : '–';
+    el('stat-wlp').textContent = (p.hands_won || 0) + ' / ' + (p.hands_lost || 0) + ' / ' + (p.hands_pushed || 0);
+    el('stat-bj').textContent = (p.blackjacks || 0).toLocaleString();
+    el('stat-biggest').textContent = money(p.biggest_win);
+    el('stat-since').textContent = p.created_at
+      ? new Date(p.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+      : '–';
+  }
+
+  el('profile-bio').addEventListener('input', () => {
+    el('bio-count').textContent = el('profile-bio').value.length;
+  });
 
   el('profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const msg = el('profile-message');
-    const display_name = el('profile-name').value.trim() || null;
+    const wasNew = !profile?.username;
+    const updates = {
+      display_name: el('profile-name').value.trim() || null,
+      username: el('profile-username').value.trim(),
+      hometown: el('profile-hometown').value.trim() || null,
+      bio: el('profile-bio').value.trim() || null,
+    };
     el('profile-save').disabled = true;
-    const { error } = await db.from('profiles').update({ display_name }).eq('id', user.id);
+    const { error } = await db.from('profiles').update(updates).eq('id', user.id);
     el('profile-save').disabled = false;
     if (error) {
-      msg.textContent = error.message;
+      msg.textContent = error.code === '23505' ? 'That username is taken. Try another.' : error.message;
       msg.classList.add('error');
       return;
     }
-    msg.classList.remove('error');
-    msg.textContent = 'Saved.';
-    profile = { ...(profile || {}), display_name };
+    profile = { ...(profile || {}), ...updates };
     renderUser();
+    fillProfileForm();
+    msg.classList.remove('error');
+    msg.textContent = wasNew ? 'Profile created! Head to the Table to play.' : 'Saved.';
   });
+
+  // ---------- Stats ----------
+  window.onRoundFinished = async (r) => {
+    if (!user) return;
+    clearTimeout(bankTimer); // record_round saves the bank too
+    const { error } = await db.rpc('record_round', {
+      p_won: r.won, p_lost: r.lost, p_pushed: r.pushed,
+      p_blackjacks: r.blackjacks, p_net: r.net, p_bank: r.bank,
+    });
+    if (error) { console.error('Could not save stats', error); return; }
+    if (profile) {
+      profile.hands_played = (profile.hands_played || 0) + r.won + r.lost + r.pushed;
+      profile.hands_won = (profile.hands_won || 0) + r.won;
+      profile.hands_lost = (profile.hands_lost || 0) + r.lost;
+      profile.hands_pushed = (profile.hands_pushed || 0) + r.pushed;
+      profile.blackjacks = (profile.blackjacks || 0) + r.blackjacks;
+      profile.biggest_win = Math.max(profile.biggest_win || 0, r.net);
+      profile.bank = r.bank;
+      renderStats();
+    }
+  };
 })();
